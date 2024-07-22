@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.text.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+
+<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.whowantstobemillioner.HomeController">
+   <children>
+      <Label layoutX="143.0" layoutY="8.0" text="Who Wants To Be A Millionaire">
+         <font>
+            <Font name="System Bold Italic" size="22.0" />
+         </font>
+      </Label>
+      <VBox alignment="CENTER" layoutX="256.0" layoutY="100.0" spacing="10.0">
+         <children>
+            <Button fx:id="startQuizBtn" mnemonicParsing="false" onMouseClicked="#startQuiz" text="Start Quiz" />
+            <Button fx:id="showQuestionsBtn" layoutX="10.0" layoutY="10.0" mnemonicParsing="false" onMouseClicked="#showQuestions" text="Show Questions" />
+            <Button fx:id="addQuestionBtn" layoutX="10.0" layoutY="35.0" mnemonicParsing="false" onMouseClicked="#addQuestion" text="Add Question" />
+            <Button fx:id="exitBtn" layoutX="10.0" layoutY="60.0" mnemonicParsing="false" onMouseClicked="#handleExit" text="Exit" />
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>
