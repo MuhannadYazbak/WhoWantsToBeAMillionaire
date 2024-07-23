@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static com.example.whowantstobemillioner.ConfigReader.readConfig;
+
 public class AddQuestionController {
     @FXML
     private Button homeBtn, addQuestionBtn;
@@ -44,10 +46,6 @@ public class AddQuestionController {
 
     String questionText, answer1, answer2, answer3, answer4;
     List<Question> questions = new ArrayList<>();
-
-    //    String answer2 = answer2TF.getText();
-//    String answer3 = answer3TF.getText();
-//    String answer4 = answer4TF.getText();
     @FXML
     private void goHome() throws IOException {
         Stage stage = (Stage) homeBtn.getScene().getWindow();
@@ -56,7 +54,7 @@ public class AddQuestionController {
         stage.setScene(scene);
     }
 
-    private boolean validQuestion() {
+    private boolean validQuestion() throws IOException {
         questionText = questionTF.getText();
         answer1 = answer1TF.getText();
         answer2 = answer2TF.getText();
@@ -89,10 +87,11 @@ public class AddQuestionController {
         return true;
 
     }
-    private static void insertQuestion(Question question) {
-        String url = "jdbc:mysql://localhost:3306/questionsdb";
-        String user = "root";
-        String password = "muh-203368246";
+    private static void insertQuestion(Question question) throws IOException {
+        DBConfig config = readConfig("config.json");
+        String url = config.getDbUrl();
+        String user = config.getUsername();
+        String password = config.getPassword();
 
         String query = "INSERT INTO questions (question_text, answer1, is_correct1, answer2, is_correct2, answer3, is_correct3, answer4, is_correct4) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -114,7 +113,7 @@ public class AddQuestionController {
         }
     }
     @FXML
-    private void addQuestion(){
+    private void addQuestion() throws IOException {
         validQuestion();
     }
 }

@@ -8,6 +8,7 @@ module com.example.whowantstobemillioner {
     requires org.kordamp.bootstrapfx.core;
     requires java.sql;
     requires javafx.base;
+    requires com.google.gson;
     opens com.example.whowantstobemillioner.model to javafx.base;
 
     opens com.example.whowantstobemillioner to javafx.fxml;

@@ -20,6 +20,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 
+import static com.example.whowantstobemillioner.ConfigReader.readConfig;
+
 public class ShowQuestionsController {
 
     @FXML
@@ -32,7 +34,7 @@ public class ShowQuestionsController {
     private TableColumn<Question, String> questionTextColumn;
 
     @FXML
-    public void initialize() {
+    public void initialize() throws IOException {
         setupTableColumns();
         ObservableList<Question> data = fetchQuestionsFromDatabase();
         questionsTable.setItems(data);
@@ -51,12 +53,13 @@ public class ShowQuestionsController {
         questionTextColumn.setCellValueFactory(new PropertyValueFactory<>("questionText"));
     }
 
-    private ObservableList<Question> fetchQuestionsFromDatabase() {
+    private ObservableList<Question> fetchQuestionsFromDatabase() throws IOException {
         ObservableList<Question> questionsList = FXCollections.observableArrayList();
 
-        String url = "jdbc:mysql://localhost:3306/questionsdb";
-        String user = "root";
-        String password = "muh-203368246";
+        DBConfig config = readConfig("config.json");
+        String url = config.getDbUrl();
+        String user = config.getUsername();
+        String password = config.getPassword();
 
         String query = "SELECT * FROM questions";
 

@@ -11,6 +11,7 @@ import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -18,6 +19,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import static com.example.whowantstobemillioner.ConfigReader.readConfig;
 
 public class SolveQuestionController {
 
@@ -36,7 +39,7 @@ public class SolveQuestionController {
     private int currentQuestionIndex = 0;
 
     @FXML
-    public void initialize() {
+    public void initialize() throws IOException {
         // Load questions from the database
         loadQuestionsFromDatabase();
 
@@ -46,10 +49,11 @@ public class SolveQuestionController {
         }
     }
 
-    private void loadQuestionsFromDatabase() {
-        String url = "jdbc:mysql://localhost:3306/questionsdb";
-        String user = "root";
-        String password = "muh-203368246";
+    private void loadQuestionsFromDatabase() throws IOException {
+        DBConfig config = readConfig("config.json");
+        String url = config.getDbUrl();
+        String user = config.getUsername();
+        String password = config.getPassword();
 
         try (Connection conn = DriverManager.getConnection(url, user, password);
              Statement stmt = conn.createStatement();
