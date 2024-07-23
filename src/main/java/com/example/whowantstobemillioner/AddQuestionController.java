@@ -1,5 +1,6 @@
 package com.example.whowantstobemillioner;
 
+import com.example.whowantstobemillioner.model.Answer;
 import com.example.whowantstobemillioner.model.Question;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -11,10 +12,7 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -66,9 +64,10 @@ public class AddQuestionController {
         answersList.add(answer3);
         answersList.add(answer4);
         rightAnswer = rightAnswerBox.getValue();
-        HashMap<String, Boolean> answers = new HashMap<>();
+        List<Answer> answers = new ArrayList<>();
+        Question question = new Question();
         for (int i = 0; i < 4; i++) {
-            answers.put(answersList.get(i), i == (rightAnswer - 1));
+            answers.add(new Answer(question.getId(),answersList.get(i), i == (rightAnswer - 1)));
         }
         if (questionText.isBlank() || answer1.isBlank() || answer2.isBlank() || answer3.isBlank() || answer4.isBlank() || rightAnswer == 0) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -77,7 +76,7 @@ public class AddQuestionController {
             alert.showAndWait();
             return false;
         }
-        Question question = new Question(questionText, answers);
+        createQuestion(question,questionText, answers);
         insertQuestion(question);
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Added new question");
@@ -87,31 +86,47 @@ public class AddQuestionController {
         return true;
 
     }
+
+    private void createQuestion(Question question,String questionText, List<Answer> answers) {
+        question.setQuestionText(questionText);
+        question.setAnswers(answers);
+    }
+
     private static void insertQuestion(Question question) throws IOException {
         DBConfig config = readConfig("config.json");
         String url = config.getDbUrl();
         String user = config.getUsername();
         String password = config.getPassword();
 
-        String query = "INSERT INTO questions (question_text, answer1, is_correct1, answer2, is_correct2, answer3, is_correct3, answer4, is_correct4) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String questionQuery = "INSERT INTO questions (question_text) VALUES (?)";
+        String answerQuery = "INSERT INTO answers (question_id, answer_text, is_correct) VALUES (?, ?, ?)";
 
         try (Connection connection = DriverManager.getConnection(url, user, password);
-             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+             PreparedStatement questionStatement = connection.prepareStatement(questionQuery, Statement.RETURN_GENERATED_KEYS);
+             PreparedStatement answerStatement = connection.prepareStatement(answerQuery)) {
 
-            preparedStatement.setString(1, question.getQuestionText());
+            // Insert the question
+            questionStatement.setString(1, question.getQuestionText());
+            questionStatement.executeUpdate();
 
-            int index = 2;
-            for (String answer : question.getAnswers().keySet()) {
-                preparedStatement.setString(index, answer);
-                preparedStatement.setBoolean(index + 1, question.getAnswers().get(answer));
-                index += 2;
+            // Get the generated question ID
+            ResultSet generatedKeys = questionStatement.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                int questionId = generatedKeys.getInt(1);
+
+                // Insert the answers
+                for (Answer answer : question.getAnswers()) {
+                    answerStatement.setInt(1, questionId);
+                    answerStatement.setString(2, answer.getAnswerText());
+                    answerStatement.setBoolean(3, answer.isCorrect());
+                    answerStatement.executeUpdate();
+                }
             }
-
-            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+
     @FXML
     private void addQuestion() throws IOException {
         validQuestion();

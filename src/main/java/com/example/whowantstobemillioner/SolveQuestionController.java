@@ -1,7 +1,7 @@
 package com.example.whowantstobemillioner;
 
+import com.example.whowantstobemillioner.model.Answer;
 import com.example.whowantstobemillioner.model.Question;
-import javafx.application.Application;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -55,20 +55,42 @@ public class SolveQuestionController {
         String user = config.getUsername();
         String password = config.getPassword();
 
+        String query = "SELECT q.id AS question_id, q.question_text, a.id AS answer_id, a.answer_text, a.is_correct " +
+                "FROM questions q " +
+                "JOIN answers a ON q.id = a.question_id " +
+                "ORDER BY q.id, a.id";
+
         try (Connection conn = DriverManager.getConnection(url, user, password);
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM questions")) {
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            Question currentQuestion = null;
+            int currentQuestionId = -1;
 
             while (rs.next()) {
-                int id = rs.getInt("id");
+                int questionId = rs.getInt("question_id");
                 String questionText = rs.getString("question_text");
-                HashMap<String, Boolean> answers = new HashMap<>();
-                answers.put(rs.getString("answer1"), rs.getBoolean("is_correct1"));
-                answers.put(rs.getString("answer2"), rs.getBoolean("is_correct2"));
-                answers.put(rs.getString("answer3"), rs.getBoolean("is_correct3"));
-                answers.put(rs.getString("answer4"), rs.getBoolean("is_correct4"));
+                int answerId = rs.getInt("answer_id");
+                String answerText = rs.getString("answer_text");
+                boolean isCorrect = rs.getBoolean("is_correct");
 
-                questions.add(new Question(id, questionText, answers));
+                if (currentQuestionId != questionId) {
+                    if (currentQuestion != null) {
+                        questions.add(currentQuestion);
+                    }
+                    currentQuestionId = questionId;
+                    currentQuestion = new Question();
+                    currentQuestion.setId(questionId);
+                    currentQuestion.setQuestionText(questionText);
+                    currentQuestion.setAnswers(new ArrayList<>());
+                }
+
+                Answer answer = new Answer(answerId, answerText, isCorrect);
+                currentQuestion.getAnswers().add(answer);
+            }
+
+            if (currentQuestion != null) {
+                questions.add(currentQuestion);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -78,11 +100,11 @@ public class SolveQuestionController {
     private void displayQuestion(Question question) {
         questionText.setText(question.getQuestionText());
 
-        List<String> answerTexts = new ArrayList<>(question.getAnswers().keySet());
-        answer1.setText(answerTexts.get(0));
-        answer2.setText(answerTexts.get(1));
-        answer3.setText(answerTexts.get(2));
-        answer4.setText(answerTexts.get(3));
+        List<Answer> answers = question.getAnswers();
+        answer1.setText(answers.get(0).getAnswerText());
+        answer2.setText(answers.get(1).getAnswerText());
+        answer3.setText(answers.get(2).getAnswerText());
+        answer4.setText(answers.get(3).getAnswerText());
     }
 
     @FXML
@@ -91,35 +113,38 @@ public class SolveQuestionController {
         String selectedAnswer = clickedButton.getText();
         Question currentQuestion = questions.get(currentQuestionIndex);
 
-        boolean isCorrect = currentQuestion.getAnswers().get(selectedAnswer);
+        boolean isCorrect = false;
+        for (Answer answer : currentQuestion.getAnswers()) {
+            if (answer.getAnswerText().equals(selectedAnswer)) {
+                isCorrect = answer.isCorrect();
+                break;
+            }
+        }
+
         if (isCorrect) {
             System.out.println("Correct!");
         } else {
             System.out.println("Incorrect!");
         }
 
-        // Move to the next question or handle end of quiz
         currentQuestionIndex++;
         if (currentQuestionIndex < questions.size()) {
             displayQuestion(questions.get(currentQuestionIndex));
         } else {
             showQuizFinishedStage();
-
         }
     }
+
     private void showQuizFinishedStage() {
         try {
-            // Load the "Home" FXML again
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Home.fxml"));
             Parent root = loader.load();
 
-            // Create a new stage
             Stage stage = new Stage();
             stage.setTitle("Who Wants To Be A Millionaire");
             stage.setScene(new Scene(root));
             stage.show();
 
-            // Close the current stage
             Stage currentStage = (Stage) questionText.getScene().getWindow();
             currentStage.close();
         } catch (Exception e) {

@@ -1,5 +1,6 @@
 package com.example.whowantstobemillioner;
 
+import com.example.whowantstobemillioner.model.Answer;
 import com.example.whowantstobemillioner.model.Question;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -18,6 +19,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import static com.example.whowantstobemillioner.ConfigReader.readConfig;
@@ -61,23 +63,46 @@ public class ShowQuestionsController {
         String user = config.getUsername();
         String password = config.getPassword();
 
-        String query = "SELECT * FROM questions";
+        String query = "SELECT q.id AS question_id, q.question_text, a.id AS answer_id, a.answer_text, a.is_correct " +
+                "FROM questions q " +
+                "JOIN answers a ON q.id = a.question_id " +
+                "ORDER BY q.id, a.id";
 
         try (Connection connection = DriverManager.getConnection(url, user, password);
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(query)) {
 
-            while (resultSet.next()) {
-                int id = resultSet.getInt("id");
-                String questionText = resultSet.getString("question_text");
-                HashMap<String, Boolean> answers = new HashMap<>();
-                answers.put(resultSet.getString("answer1"), resultSet.getBoolean("is_correct1"));
-                answers.put(resultSet.getString("answer2"), resultSet.getBoolean("is_correct2"));
-                answers.put(resultSet.getString("answer3"), resultSet.getBoolean("is_correct3"));
-                answers.put(resultSet.getString("answer4"), resultSet.getBoolean("is_correct4"));
+            // Temporary variables to hold the current question and its answers
+            Question currentQuestion = null;
+            int currentQuestionId = -1;
 
-                Question question = new Question(id, questionText, answers);
-                questionsList.add(question);
+            while (resultSet.next()) {
+                int questionId = resultSet.getInt("question_id");
+                String questionText = resultSet.getString("question_text");
+                int answerId = resultSet.getInt("answer_id");
+                String answerText = resultSet.getString("answer_text");
+                boolean isCorrect = resultSet.getBoolean("is_correct");
+
+                // If we encounter a new question, save the previous one (if exists) and start a new one
+                if (currentQuestionId != questionId) {
+                    if (currentQuestion != null) {
+                        questionsList.add(currentQuestion);
+                    }
+                    currentQuestionId = questionId;
+                    currentQuestion = new Question();
+                    currentQuestion.setId(questionId);
+                    currentQuestion.setQuestionText(questionText);
+                    currentQuestion.setAnswers(new ArrayList<>());
+                }
+
+                // Add the answer to the current question
+                Answer answer = new Answer(answerId, answerText, isCorrect);
+                currentQuestion.getAnswers().add(answer);
+            }
+
+            // Add the last question if exists
+            if (currentQuestion != null) {
+                questionsList.add(currentQuestion);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -85,4 +110,5 @@ public class ShowQuestionsController {
 
         return questionsList;
     }
+
 }
