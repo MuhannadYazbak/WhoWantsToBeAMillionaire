@@ -11,6 +11,6 @@ module com.example.whowantstobemillioner {
     requires com.google.gson;
     opens com.example.whowantstobemillioner.model to javafx.base;
 
-    opens com.example.whowantstobemillioner to javafx.fxml;
+    opens com.example.whowantstobemillioner to javafx.fxml, com.google.gson;
     exports com.example.whowantstobemillioner;
 }
